@@ -13,10 +13,13 @@ const SYMBOL_RE = /^[A-Z0-9.=^-]{1,15}$/
 const ALLOWED_PARAMS = ['period1', 'period2', 'interval', 'events']
 // Prices move during US market hours; 15 minutes is fresh enough for a dashboard.
 const CACHE_SECONDS = 900
+const TRADE_DESK = 'https://trade-desk.dreamnattapat.workers.dev'
 
 export default {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url)
+    // Team Lynch moved to the trade desk site.
+    if (/^\/(lynch|dream)\/?$/.test(url.pathname)) return Response.redirect(TRADE_DESK + '/lynch', 301)
     const symbol = decodeURIComponent(url.pathname.replace(/^\/api\/chart\//, ''))
     if (request.method !== 'GET' || !url.pathname.startsWith('/api/chart/') || !SYMBOL_RE.test(symbol)) {
       return new Response('Not found', { status: 404 })

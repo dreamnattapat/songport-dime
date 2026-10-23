@@ -2,15 +2,14 @@ import { ArrowDownRight, ArrowUpRight, ChevronRight, Info } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { AssetsTable } from '@/components/AssetsTable'
-import { PortfolioChart, type DreamLine } from '@/components/PortfolioChart'
+import { PortfolioChart } from '@/components/PortfolioChart'
 import { Button } from '@/components/ui/button'
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { computeAnalytics, WIN_RATE_EXCLUDED, type TradeStats } from '@/lib/analytics'
 import { buildPortfolio, scorecard, type PeriodChange, type Portfolio, type Timeline } from '@/lib/benchmark'
 import { computeAssetPnl, pnlBreakdown, sumAssets, type Breakdown } from '@/lib/assets'
 import { getUsdThbOverride, setUsdThbOverride, type Transaction } from '@/lib/db'
-import { useDream } from '@/hooks/useDream'
 import {
   formatDate,
   formatDateTime,
@@ -83,22 +82,6 @@ export function Dashboard({
     [transactions, splits, asTraded],
   )
   const usd = currency === '$'
-  // Team Dream (the AI team on /dream), for the head-to-head card in the chart.
-  const { data: dream } = useDream()
-  const dreamLine = useMemo<DreamLine | null>(() => {
-    if (!dream) return null
-    const { points, closedThrough } = dream.state
-    // From the close of Dream's first session (it holds cash until then), once it has closed.
-    const first = points.find((p) => p.date >= dream.ledger.startDate && p.date <= closedThrough)
-    if (!first) return null
-    const today = points.at(-1)?.date
-    const rate = (date: string) => (usd ? 1 : date === today ? dream.fx.latest : dream.fx.on(date))
-    return {
-      start: first.date,
-      base: dream.ledger.startingCashUsd * rate(first.date),
-      values: new Map(points.map((p) => [p.date, p.value * rate(p.date)])),
-    }
-  }, [dream, usd])
   const assets = useMemo(
     () => computeAssetPnl(analytics, portfolio?.timeline ?? null, currency),
     [analytics, portfolio, currency],
@@ -142,15 +125,6 @@ export function Dashboard({
           <CardDescription title="ลงเงินจำนวนเดียวกัน ในวันเดียวกัน ใน SPY ไม่รวมเงินปันผลและค่าธรรมเนียมฝั่ง S&P 500">
             การซื้อขายของคุณเทียบกับการซื้อขายแบบเดียวกันใน S&P 500 {usd ? 'เป็นดอลลาร์สหรัฐ' : 'เป็นเงินบาท'}
           </CardDescription>
-          <CardAction>
-            <a
-              href="/lynch"
-              className="text-series-dream inline-flex items-center gap-1 text-sm font-medium underline-offset-2 hover:underline"
-            >
-              ทีม Lynch
-              <ArrowUpRight className="size-4" aria-hidden />
-            </a>
-          </CardAction>
         </CardHeader>
         <CardContent>
           {portfolio ? (
@@ -160,7 +134,6 @@ export function Dashboard({
                 latestSession={portfolio.timeline.latestSession}
                 currency={currency}
                 hideAmounts={hideAmounts}
-                dream={dreamLine}
               />
               {portfolio.timeline.approximated.length > 0 && (
                 <p className="text-muted-foreground mt-3 text-xs">
