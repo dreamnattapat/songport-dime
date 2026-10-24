@@ -94,7 +94,7 @@ export function ConnectStep({
         <OptionCard
           icon={<FileUp />}
           title="ไฟล์ PDF"
-          badge="ละเอียดที่สุด"
+          badge="ไม่ต้องเชื่อมอีเมล"
           description="ไฟล์ที่แนบมาในอีเมลยืนยันการซื้อขายของ Dime! เลือกได้ทีละหลายไฟล์ ต้องใช้วันเกิดเปิดไฟล์"
           action="เลือกไฟล์ PDF"
           onAction={() => pdfInput.current?.click()}
