@@ -80,117 +80,137 @@ export function ConnectStep({
   connecting: boolean
   disabled: boolean
 }) {
-  return (
-    <StepPanel title="อ่านใบยืนยันการซื้อขาย">
-      <PdfDrop onFiles={onFiles} />
-      <Divider>หรือใช้ภาพหน้าจอจากแอป Dime!</Divider>
-      <div className="space-y-3 rounded-2xl border-2 border-dashed p-5 text-center">
-        <p className="text-muted-foreground text-sm">
-          แคปหน้าจอ “รายละเอียดคำสั่ง” ในแอป แล้วอัปโหลดรูป เว็บอ่านตัวเลขให้ ตรวจแล้วกดบันทึกทีละคำสั่ง
-          ไม่ต้องใช้วันเกิด
-        </p>
-        <Button
-          size="lg"
-          className="bg-brand hover:bg-brand/90 h-12 w-full rounded-full text-base text-white"
-          onClick={onScreenshots}
-        >
-          <Camera className="size-5" aria-hidden />
-          อัปโหลดภาพหน้าจอ
-        </Button>
-      </div>
-      <Divider>หรือดึงจากอีเมลให้อัตโนมัติ</Divider>
-      <p className="text-muted-foreground text-sm">
-        เว็บนี้ค้นหาเฉพาะอีเมลหัวข้อ “{EMAIL_SUBJECT}” เพื่อดึงไฟล์ใบยืนยันการซื้อขาย สิทธิ์เป็นแบบอ่านอย่างเดียว จึงส่ง
-        ลบ หรือแก้ไขอีเมลของคุณไม่ได้
-      </p>
-      <Button
-        size="lg"
-        className="bg-brand hover:bg-brand/90 h-12 w-full rounded-full text-base text-white"
-        onClick={onConnect}
-        disabled={disabled || connecting}
-      >
-        <Mail className="size-5" aria-hidden />
-        {connecting ? 'กำลังรอ Google…' : 'เชื่อมต่อ Gmail'}
-      </Button>
-      <details className="text-muted-foreground text-sm">
-        <summary className="cursor-pointer">Google แจ้งว่า “Google ยังไม่ได้ยืนยันแอปนี้” ใช่ไหม?</summary>
-        <div className="mt-2 space-y-2">
-          <p>
-            เป็นเรื่องปกติ เพราะแอปนี้ยังอยู่ระหว่างการตรวจสอบของ Google ให้แตะ <strong>ขั้นสูง (Advanced)</strong>{' '}
-            แล้วแตะ <strong>ไปที่ … (ไม่ปลอดภัย)</strong> และอนุญาตให้อ่าน Gmail
-          </p>
-          <p>
-            ยกเลิกสิทธิ์ได้ทุกเมื่อที่{' '}
-            <a
-              className="underline underline-offset-2"
-              href="https://myaccount.google.com/connections"
-              target="_blank"
-              rel="noreferrer"
-            >
-              บัญชี Google ของคุณ
-            </a>
-          </p>
-        </div>
-      </details>
-    </StepPanel>
-  )
-}
-
-/** Pick or drop the PDF files Dime! emails after each trade (the "Confirmation Note" attachments). */
-function PdfDrop({ onFiles }: { onFiles: (files: File[]) => void }) {
-  const input = useRef<HTMLInputElement>(null)
+  const pdfInput = useRef<HTMLInputElement>(null)
   const [over, setOver] = useState(false)
-  const take = (list: FileList | null) => {
+  const takePdfs = (list: FileList | null) => {
     const files = [...(list ?? [])].filter((f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'))
     if (files.length) onFiles(files)
   }
   return (
-    <div
-      className={`space-y-3 rounded-2xl border-2 border-dashed p-5 text-center transition-colors ${over ? 'border-brand bg-brand-soft' : ''}`}
-      onDragOver={(e) => {
-        e.preventDefault()
-        setOver(true)
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault()
-        setOver(false)
-        take(e.dataTransfer.files)
-      }}
-    >
-      <p className="text-muted-foreground text-sm">
-        บันทึกไฟล์ PDF ที่แนบมาในอีเมลยืนยันการซื้อขายของ Dime! แล้วเลือกมาได้ทีละหลายไฟล์ ไฟล์ถูกอ่านในเครื่องนี้
-        ไม่ถูกส่งไปที่ใด ไม่ต้องให้สิทธิ์อะไรเลย
-      </p>
-      <Button
-        size="lg"
-        className="bg-brand hover:bg-brand/90 h-12 w-full rounded-full text-base text-white"
-        onClick={() => input.current?.click()}
-      >
-        <FileUp className="size-5" aria-hidden />
-        เลือกไฟล์ PDF
-      </Button>
-      <input
-        ref={input}
-        type="file"
-        accept="application/pdf,.pdf"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          take(e.target.files)
-          e.target.value = ''
-        }}
-      />
-    </div>
+    <StepPanel title="อ่านใบยืนยันการซื้อขาย">
+      <p className="text-muted-foreground -mt-2 text-sm">เลือก 1 จาก 3 วิธี ได้ผลเหมือนกัน ทุกอย่างอ่านในเครื่องนี้</p>
+      <div className="space-y-3">
+        <OptionCard
+          icon={<FileUp />}
+          title="ไฟล์ PDF"
+          badge="ละเอียดที่สุด"
+          description="ไฟล์ที่แนบมาในอีเมลยืนยันการซื้อขายของ Dime! เลือกได้ทีละหลายไฟล์ ต้องใช้วันเกิดเปิดไฟล์"
+          action="เลือกไฟล์ PDF"
+          onAction={() => pdfInput.current?.click()}
+          highlight={over}
+          dropProps={{
+            onDragOver: (e) => {
+              e.preventDefault()
+              setOver(true)
+            },
+            onDragLeave: () => setOver(false),
+            onDrop: (e) => {
+              e.preventDefault()
+              setOver(false)
+              takePdfs(e.dataTransfer.files)
+            },
+          }}
+        />
+        <input
+          ref={pdfInput}
+          type="file"
+          accept="application/pdf,.pdf"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            takePdfs(e.target.files)
+            e.target.value = ''
+          }}
+        />
+        <OptionCard
+          icon={<Camera />}
+          title="ภาพหน้าจอ"
+          badge="ไม่ต้องใช้วันเกิด"
+          description="แคปหน้า “รายละเอียดคำสั่ง” ในแอป Dime! เว็บอ่านตัวเลขให้ ตรวจแล้วบันทึกทีละคำสั่ง"
+          action="อัปโหลดภาพหน้าจอ"
+          onAction={onScreenshots}
+        />
+        <OptionCard
+          icon={<Mail />}
+          title="Gmail"
+          badge="อัตโนมัติ"
+          description={`ดึงทุกอีเมลหัวข้อ “${EMAIL_SUBJECT}” ให้เอง สิทธิ์อ่านอย่างเดียว ส่ง ลบ หรือแก้อีเมลไม่ได้`}
+          action={connecting ? 'กำลังรอ Google…' : 'เชื่อมต่อ Gmail'}
+          onAction={onConnect}
+          disabled={disabled || connecting}
+        >
+          <details className="text-muted-foreground text-xs">
+            <summary className="cursor-pointer">Google แจ้งว่า “Google ยังไม่ได้ยืนยันแอปนี้” ใช่ไหม?</summary>
+            <div className="mt-2 space-y-2">
+              <p>
+                เป็นเรื่องปกติ เพราะแอปนี้ยังอยู่ระหว่างการตรวจสอบของ Google ให้แตะ <strong>ขั้นสูง (Advanced)</strong>{' '}
+                แล้วแตะ <strong>ไปที่ … (ไม่ปลอดภัย)</strong> และอนุญาตให้อ่าน Gmail
+              </p>
+              <p>
+                ยกเลิกสิทธิ์ได้ทุกเมื่อที่{' '}
+                <a
+                  className="underline underline-offset-2"
+                  href="https://myaccount.google.com/connections"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  บัญชี Google ของคุณ
+                </a>
+              </p>
+            </div>
+          </details>
+        </OptionCard>
+      </div>
+    </StepPanel>
   )
 }
 
-function Divider({ children }: { children: ReactNode }) {
+/** One of the three ways in: the same shape for each, so they read as equal choices. */
+function OptionCard({
+  icon,
+  title,
+  badge,
+  description,
+  action,
+  onAction,
+  disabled,
+  highlight,
+  dropProps,
+  children,
+}: {
+  icon: ReactNode
+  title: string
+  badge: string
+  description: string
+  action: string
+  onAction: () => void
+  disabled?: boolean
+  highlight?: boolean
+  dropProps?: React.HTMLAttributes<HTMLDivElement>
+  children?: ReactNode
+}) {
   return (
-    <div className="text-muted-foreground flex items-center gap-3 text-sm">
-      <span className="bg-border h-px flex-1" />
+    <div
+      className={`space-y-3 rounded-2xl border p-4 transition-colors ${highlight ? 'border-brand bg-brand-soft' : 'bg-background/40'}`}
+      {...dropProps}
+    >
+      <div className="flex items-center gap-3">
+        <span className="bg-brand-soft text-brand flex size-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5">
+          {icon}
+        </span>
+        <span className="font-semibold">{title}</span>
+        <span className="bg-muted text-muted-foreground ml-auto rounded-full px-2 py-0.5 text-xs">{badge}</span>
+      </div>
+      <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
+      <Button
+        size="lg"
+        className="bg-brand hover:bg-brand/90 h-12 w-full rounded-full text-base text-white"
+        onClick={onAction}
+        disabled={disabled}
+      >
+        {action}
+      </Button>
       {children}
-      <span className="bg-border h-px flex-1" />
     </div>
   )
 }
