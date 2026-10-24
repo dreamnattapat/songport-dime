@@ -189,7 +189,7 @@ export function ScreenshotImport({ onSaved }: { onSaved: () => void }) {
             {field('units', 'จำนวนหุ้น', { inputMode: 'decimal' })}
             {field('unitPrice', 'ราคาที่ได้จริง (USD)', { inputMode: 'decimal' })}
             {field('grossAmount', 'มูลค่าหุ้น (USD)', { inputMode: 'decimal' })}
-            {field('fees', 'ค่าคอม + VAT หลังส่วนลด (USD)', { inputMode: 'decimal' })}
+            {field('fees', 'ค่าธรรมเนียมรวม หลังส่วนลด (USD)', { inputMode: 'decimal' })}
             {field('tradeDate', 'วันที่ซื้อขาย (เวลานิวยอร์ก)', { type: 'date' })}
             {field('orderId', 'เลขที่คำสั่ง')}
           </div>

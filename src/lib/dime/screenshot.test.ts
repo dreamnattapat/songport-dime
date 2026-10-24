@@ -37,7 +37,60 @@ const BOTTOM = `19:01 %  ail GB
 0370256
 หากยกเลิก คุณจะได้รับคูปองที่ใช้กับรายการนี้คืน`
 
+// A market sell (Oct 2026): fees show as negatives, "-1.10" read as "-110", "30 หุ้น" as "30 Ku",
+// and the two screenshots overlap.
+const SELL_TOP = `&                  รายละเอียดคําสัง
+สถานะ (ณ 23 ต.ค. 69 - 18:12 น.)                           2
+@ สาเรจ                                       :
+คุณได้รับเงินค่าขายคืนแล้ว
+ขาย FPS                                    % NYSE
+2
+30 Ku
+2
+ราคา                        ราคาที่ได้จริง
+ใช้ราคาตลาด (Market) ว24.48 USD
+ยอดที่จะได้รับคืน
+มูลค่าหุ้น                                   734.40 USD
+ค่าคอมมิชชัน                                  -110 USD
+ภาษีมูลค่าเพิ่ม 7% (VAT)                     -0.08 USD
+ค่าธรรมเนียมรอจ่าย ()
+ค่าธรรมเนียมตลาดหลักทรัพย์                  -0.02 USD
+ค่าธรรมเนียมการขาย (TAF                    0.00 USD
+Fee)
+ประเภทคําสั่ง                == ราคาตลาด (Market)`
+
+const SELL_BOTTOM = `<                   รายละเอียดคําสัง
+มูลค่าหุ้น                                   734.40 USD
+ค่าคอมมิชชัน                                  -110 USD
+ภาษีมูลค่าเพิ่ม 7% (VAT)                     -0.08 USD
+ค่าธรรมเนียมรอจ่าย ()
+ค่าธรรมเนียมตลาดหลักทรัพย์                  -0.02 USD
+ค่าธรรมเนียมการขาย (TAF                    0.00 USD
+Fee)
+ประเภทคําสั่ง                == ราคาตลาด (Market)
+วันที่ส่งคําสั่ง                         23 ๓.ค. 69 - 02:47 u.
+วันที่คําสั่งสําเร็อ                     23 ต๓.ค. 69 - 02:47 u.
+ปัญชีรับเงิน                             © Dime! USD
+00000000000
+เลขที่คําสั่ง                     STKSMS2026102207470
+3368517`
+
 describe('parseScreenshotText', () => {
+  it('reads a market sell: negative fees, a lost decimal point, overlapping screenshots', () => {
+    expect(parseScreenshotText(`${SELL_TOP}\n\n${SELL_BOTTOM}`)).toEqual({
+      side: 'Sell',
+      security: 'FPS',
+      exchange: 'NYSE',
+      units: 30,
+      unitPrice: 24.48,
+      grossAmount: 734.4,
+      // Commission 1.10 + VAT 0.08 + the exchange fee Dime! takes later 0.02.
+      fees: 1.2,
+      tradeDate: '2026-10-22',
+      orderId: 'STKSMS20261022074703368517',
+    })
+  })
+
   it('reads a buy from the two screenshots of the order details screen', () => {
     expect(parseScreenshotText(`${TOP}\n${BOTTOM}`)).toEqual({
       side: 'Buy',

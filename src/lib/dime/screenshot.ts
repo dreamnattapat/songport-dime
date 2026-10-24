@@ -27,6 +27,8 @@ export type ScreenshotOrder = {
 
 const NUM = String.raw`(-?[\d,]+(?:\.\d+)?)`
 const toNum = (s: string) => Number(s.replace(/,/g, ''))
+/** A dollar amount: the app always shows cents, so a number OCR read without its point ("-110") is in cents. */
+const toUsd = (s: string) => (s.includes('.') ? toNum(s) : toNum(s) / 100)
 
 const THAI_MONTHS: Record<string, number> = {
   'ม.ค.': 1,
@@ -48,7 +50,7 @@ function usdAfter(text: string, label: RegExp): number | null {
   for (const line of text.split('\n')) {
     if (!label.test(line)) continue
     const m = line.match(new RegExp(`${NUM}\\s*USD`))
-    if (m) return toNum(m[1])
+    if (m) return toUsd(m[1])
   }
   return null
 }
@@ -59,7 +61,9 @@ export function newYorkDate(bangkok: Date): string {
 }
 
 export function parseScreenshotText(text: string): ScreenshotOrder {
-  const lines = text.split('\n').map((l) => l.trim())
+  // Two screenshots of one screen overlap: count each line once.
+  const lines = [...new Set(text.split('\n').map((l) => l.trim().replace(/\s+/g, ' ')))]
+  text = lines.join('\n')
 
   // "ซื้อ FPS" / "ขาย FPS", then the exchange on the same line.
   let side: ScreenshotOrder['side'] = null
@@ -91,7 +95,7 @@ export function parseScreenshotText(text: string): ScreenshotOrder {
   const priceLabel = lines.findIndex((l) => /ราคาที่ได้จริง/.test(l))
   if (priceLabel >= 0) {
     for (const line of lines.slice(priceLabel, priceLabel + 3)) {
-      const prices = [...line.matchAll(new RegExp(`${NUM}\\s*USD`, 'g'))].map((m) => toNum(m[1]))
+      const prices = [...line.matchAll(new RegExp(`${NUM}\\s*USD`, 'g'))].map((m) => toUsd(m[1]))
       if (prices.length) {
         unitPrice = prices.at(-1)!
         break
@@ -100,13 +104,22 @@ export function parseScreenshotText(text: string): ScreenshotOrder {
   }
 
   const grossAmount = usdAfter(text, /มูลค่าหุ้น/)
-  const commission = usdAfter(text, /ค่าคอม/) ?? 0
-  const vat = usdAfter(text, /VAT|ภาษีมูลค่าเพิ่ม/) ?? 0
-  // Coupons and discounts show as negative amounts.
-  const discounts = lines
-    .flatMap((l) => [...l.matchAll(/(-[\d,]+\.\d+)\s*USD/g)].map((m) => -toNum(m[1])))
-    .reduce((a, b) => a + b, 0)
-  const fees = grossAmount != null ? Math.max(0, Math.round((commission - discounts + vat) * 100) / 100) : null
+  // Buys show commission positive with coupons as negatives under it; sells show the fees as negatives.
+  // The fee is commission + VAT + the market fees Dime! takes later (sells), less coupons.
+  const abs = (v: number | null) => Math.abs(v ?? 0)
+  const commission = abs(usdAfter(text, /^ค่าคอม/))
+  const vat = abs(usdAfter(text, /VAT|ภาษีมูลค่าเพิ่ม/))
+  const marketFees = abs(usdAfter(text, /ค่าธรรมเนียมตลาด/)) + abs(usdAfter(text, /TAF/))
+  let coupons = 0
+  const couponStart = lines.findIndex((l) => /คูปอง|ส่วนลด/.test(l))
+  if (couponStart >= 0)
+    for (const line of lines.slice(couponStart + 1)) {
+      if (/VAT|ภาษี|รวม|ค่าธรรมเนียม/.test(line)) break
+      const m = line.match(new RegExp(`${NUM}\\s*USD`))
+      if (m) coupons += abs(toUsd(m[1]))
+    }
+  const fees =
+    grossAmount != null ? Math.max(0, Math.round((commission + vat + marketFees - coupons) * 100) / 100) : null
 
   // Units × price should give the stock value; if the units were misread, trust the value.
   if (grossAmount != null && unitPrice) {
