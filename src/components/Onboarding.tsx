@@ -105,8 +105,7 @@ export function ConnectStep({
       </p>
       <Button
         size="lg"
-        variant="outline"
-        className="h-12 w-full rounded-full text-base"
+        className="bg-brand hover:bg-brand/90 h-12 w-full rounded-full text-base text-white"
         onClick={onConnect}
         disabled={disabled || connecting}
       >

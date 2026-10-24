@@ -216,7 +216,7 @@ export default function App() {
                 </h1>
               </div>
               <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
-                ดูกำไรขาดทุนและเทียบกับ S&P 500 ฟรี ไม่ต้องสมัครสมาชิก
+                ใช้ฟรี ไม่ต้องสมัครสมาชิก ไม่เก็บข้อมูล
               </p>
             </header>
           )}
