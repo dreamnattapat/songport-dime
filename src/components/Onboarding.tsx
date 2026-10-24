@@ -147,7 +147,7 @@ export function ConnectStep({
           icon={<Mail />}
           title="Gmail"
           badge="อัตโนมัติ"
-          description={`ดึงทุกอีเมลหัวข้อ “${EMAIL_SUBJECT}” ให้เอง สิทธิ์อ่านอย่างเดียว ส่ง ลบ หรือแก้อีเมลไม่ได้`}
+          description={`ดึงทุกอีเมลหัวข้อ “${EMAIL_SUBJECT}” ให้เอง สิทธิ์อ่านอย่างเดียว ส่ง ลบ หรือแก้อีเมลไม่ได้ ต้องใช้วันเกิดเปิดไฟล์`}
           action={connecting ? 'กำลังรอ Google…' : 'เชื่อมต่อ Gmail'}
           onAction={onConnect}
           disabled={disabled || connecting}
