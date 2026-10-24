@@ -97,6 +97,7 @@ export function ConnectStep({
           badge="ไม่ต้องเชื่อมอีเมล"
           description="ไฟล์ที่แนบมาในอีเมลยืนยันการซื้อขายของ Dime! เลือกได้ทีละหลายไฟล์ ต้องใช้วันเกิดเปิดไฟล์"
           action="เลือกไฟล์ PDF"
+          howto="pdf"
           onAction={() => pdfInput.current?.click()}
           highlight={over}
           dropProps={{
@@ -189,8 +190,11 @@ function OptionCard({
   disabled,
   highlight,
   dropProps,
+  howto,
   children,
 }: {
+  /** A short screen recording of this way in, e.g. 'pdf' for /howto/pdf.mp4. */
+  howto?: string
   icon: ReactNode
   title: string
   badge: string
@@ -223,7 +227,37 @@ function OptionCard({
       >
         {action}
       </Button>
+      {howto && <HowTo name={howto} />}
       {children}
+    </div>
+  )
+}
+
+/** "ดูวิธี": a short, silent screen recording, loaded only when opened. */
+function HowTo({ name }: { name: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="text-center">
+      <button
+        type="button"
+        className="text-brand text-sm font-medium underline-offset-2 hover:underline"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        {open ? 'ซ่อนวิธี' : 'ดูวิธี ▶'}
+      </button>
+      {open && (
+        <video
+          className="mx-auto mt-2 max-h-[28rem] rounded-xl border"
+          src={`/howto/${name}.mp4`}
+          poster={`/howto/${name}.jpg`}
+          autoPlay
+          loop
+          muted
+          playsInline
+          controls
+        />
+      )}
     </div>
   )
 }
