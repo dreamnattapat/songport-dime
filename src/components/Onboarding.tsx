@@ -130,6 +130,7 @@ export function ConnectStep({
           badge="ไม่ต้องใช้วันเกิด"
           description="แคปหน้า “รายละเอียดคำสั่ง” ในแอป Dime! เว็บอ่านตัวเลขให้ ตรวจแล้วบันทึกทีละคำสั่ง"
           action="อัปโหลดภาพหน้าจอ"
+          howto="shot"
           onAction={() => shotInput.current?.click()}
         />
         <input
