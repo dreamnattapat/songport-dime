@@ -121,6 +121,29 @@ describe('parseScreenshotText', () => {
     expect(order.fees).toBeCloseTo(1.2 - 0.37 + 0.06)
   })
 
+  it('reads a sell on NASDAQ, and a month OCR garbled as "๓ต.ค." when there is no order number', () => {
+    const text = `ขาย PEP                                    % NASDAQ
+5 หุ้น
+ราคา                        ราคาที่ได้จริง
+ใช้ราคาตลาด (Market) 136.52 USD
+มูลค่าหุ้น                                   682.62 USD
+ค่าคอมมิชชัน                                  -1.03 USD
+ภาษีมูลค่าเพิ่ม 7% (VAT)                      -0.07 USD
+ค่าธรรมเนียมตลาดหลักทรัพย์                  -0.02 USD
+ค่าธรรมเนียมการขาย (TAF                   0.00 USD
+วันที่คําสั่งสําเร็อ                     23 ๓ต.ค. 69 - 20:49 u.`
+    expect(parseScreenshotText(text)).toMatchObject({
+      side: 'Sell',
+      security: 'PEP',
+      exchange: 'NASDAQ',
+      units: 5,
+      unitPrice: 136.52,
+      grossAmount: 682.62,
+      fees: 1.12,
+      tradeDate: '2026-10-23',
+    })
+  })
+
   it('leaves what it cannot read empty', () => {
     expect(parseScreenshotText('nothing here')).toMatchObject({ side: null, security: null, grossAmount: null })
   })

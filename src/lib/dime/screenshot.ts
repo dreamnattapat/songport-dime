@@ -147,7 +147,13 @@ export function parseScreenshotText(text: string): ScreenshotOrder {
       lines.find((l) => /\d{1,2}\s+\S+\s+\d{2}\s*-\s*\d{1,2}:\d{2}/.test(l))
     const m = done?.match(/(\d{1,2})\s+(\S+)\s+(\d{2,4})\s*-\s*(\d{1,2}):(\d{2})/)
     if (m) {
-      const month = THAI_MONTHS[m[2].replace('๓', 'ต').replace('ด', 'ต')]
+      const month =
+        THAI_MONTHS[
+          m[2]
+            .replace(/^๓(?=ต)/, '')
+            .replace('๓', 'ต')
+            .replace('ด', 'ต')
+        ]
       let year = Number(m[3])
       if (year < 100) year += 2500 // Buddhist era, two digits
       if (year > 2400) year -= 543
