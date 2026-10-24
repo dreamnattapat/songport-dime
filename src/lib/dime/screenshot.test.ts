@@ -144,6 +144,32 @@ describe('parseScreenshotText', () => {
     })
   })
 
+  it('takes the ticker from the English-only read when the mixed read garbles it ("RKLB" as "๑8")', () => {
+    const mixed = `ซื้อ ๑8                               £ NASDAQ
+10 หุน
+ราคาที่คุณตั้ง                 ราคาที่ได้จริง
+53.40 USD                 53.40 USD
+มูลค่าหุ้น                                   534.00 USD
+ค่าคอมมิชชัน                                  0.80 USD
+ภาษีมูลค่าเพิ่ม 7% (VAT)                      0.06 USD
+เลขที่คําสั่ง                     STKBLO20261015054423
+174323`
+    const english = `#o RKLB £ NASDAQ
+53.40 USD 53.40 USD
+yamBu 534.00 USD`
+    expect(parseScreenshotText(mixed, english)).toMatchObject({
+      side: 'Buy',
+      security: 'RKLB',
+      exchange: 'NASDAQ',
+      units: 10,
+      unitPrice: 53.4,
+      grossAmount: 534,
+      fees: 0.86,
+      tradeDate: '2026-10-15',
+      orderId: 'STKBLO20261015054423174323',
+    })
+  })
+
   it('leaves what it cannot read empty', () => {
     expect(parseScreenshotText('nothing here')).toMatchObject({ side: null, security: null, grossAmount: null })
   })

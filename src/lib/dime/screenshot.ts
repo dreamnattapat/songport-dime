@@ -60,10 +60,15 @@ export function newYorkDate(bangkok: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(bangkok)
 }
 
-export function parseScreenshotText(text: string): ScreenshotOrder {
+/**
+ * `text`: the screenshots read as Thai + English. `englishText` (optional): the same screenshots read as
+ * English only, which gets Latin tickers right where the mixed read garbles them ("RKLB" as "๑8").
+ */
+export function parseScreenshotText(text: string, englishText = ''): ScreenshotOrder {
   // Two screenshots of one screen overlap: count each line once.
   const lines = [...new Set(text.split('\n').map((l) => l.trim().replace(/\s+/g, ' ')))]
   text = lines.join('\n')
+  const EXCHANGES = /\b(NYSE|NASDAQ|AMEX|ARCA|BATS|OTC)\b/
 
   // "ซื้อ FPS" / "ขาย FPS", then the exchange on the same line.
   let side: ScreenshotOrder['side'] = null
@@ -71,14 +76,25 @@ export function parseScreenshotText(text: string): ScreenshotOrder {
   let exchange: string | null = null
   let sideLine = -1
   lines.some((line, i) => {
-    const m = line.match(/(ซื้อ|ขาย)\s+([A-Z][A-Z0-9.]{0,9})\b/)
+    const m = line.match(/(?:^|\s)(ซื้อ|ขาย)\s+(\S+)/)
     if (!m) return false
     side = m[1] === 'ซื้อ' ? 'Buy' : 'Sell'
-    security = m[2]
-    exchange = line.match(/\b(NYSE|NASDAQ|AMEX|ARCA|BATS|OTC)\b/)?.[1] ?? null
+    security = /^[A-Z][A-Z0-9.]{0,9}$/.test(m[2]) ? m[2] : null
+    exchange = line.match(EXCHANGES)?.[1] ?? null
     sideLine = i
     return true
   })
+  // The English read: the ticker is the last capitalised word before the exchange ("#o RKLB £ NASDAQ").
+  for (const line of englishText.split('\n')) {
+    const ex = line.match(EXCHANGES)
+    if (!ex) continue
+    const words = line.slice(0, ex.index).match(/\b[A-Z][A-Z0-9.]{0,9}\b/g)
+    if (words?.length) {
+      security = words.at(-1)!
+      exchange = ex[1]
+      break
+    }
+  }
 
   // Units: the line under it ("10 หุ้น", often read as "10 หน"); skip stray short noise.
   let units: number | null = null

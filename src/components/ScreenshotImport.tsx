@@ -37,8 +37,8 @@ export function ScreenshotImport({ onSaved }: { onSaved: () => void }) {
     setMessage(null)
     setReading(0)
     try {
-      const text = await readScreenshots(files, setReading)
-      const o = parseScreenshotText(text)
+      const { text, englishText } = await readScreenshots(files, setReading)
+      const o = parseScreenshotText(text, englishText)
       const s = (v: number | string | null | undefined) => (v == null ? '' : String(v))
       setDraft({
         side: o.side ?? 'Buy',
