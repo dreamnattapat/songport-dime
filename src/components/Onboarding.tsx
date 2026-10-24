@@ -153,6 +153,7 @@ export function ConnectStep({
           action={connecting ? 'กำลังรอ Google…' : 'เชื่อมต่อ Gmail'}
           onAction={onConnect}
           disabled={disabled || connecting}
+          howto="gmail"
         >
           <details className="text-muted-foreground text-xs">
             <summary className="cursor-pointer">Google แจ้งว่า “Google ยังไม่ได้ยืนยันแอปนี้” ใช่ไหม?</summary>
