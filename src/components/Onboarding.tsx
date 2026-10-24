@@ -352,24 +352,42 @@ export function DataPath() {
         ข้อมูลของคุณอยู่ในเครื่องคุณเท่านั้น
       </h2>
       <figure className="space-y-3">
-        <div className="flex items-start justify-between gap-1" aria-hidden>
-          <Node icon={<Mail />} label="Gmail" />
+        <div className="flex items-center gap-1 pb-8" aria-hidden>
+          {/* Three ways in, joined into one line to this device. */}
+          <div className="flex shrink-0 flex-col gap-2">
+            {[
+              [<FileUp key="pdf" />, 'ไฟล์ PDF'],
+              [<Camera key="shot" />, 'ภาพหน้าจอ'],
+              [<Mail key="mail" />, 'Gmail'],
+            ].map(([icon, label]) => (
+              <div key={label as string} className="flex items-center gap-2">
+                <span className="bg-brand-soft text-brand flex size-9 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5">
+                  {icon}
+                </span>
+                <span className="w-16 text-xs leading-tight font-medium">{label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="border-brand/60 h-[7.5rem] w-3 shrink-0 rounded-r-lg border-y-2 border-r-2 border-dashed" />
           <Link />
           <Node icon={<LaptopMinimal />} label="เครื่องของคุณ" highlight />
           <Link blocked />
           <Node icon={<Server />} label="เซิร์ฟเวอร์ของเว็บ" muted />
         </div>
         <figcaption className="text-muted-foreground text-sm">
-          ไฟล์ที่คุณเลือก หรืออีเมลที่ดึงจาก Google มาที่เบราว์เซอร์ของคุณโดยตรง ถูกคำนวณและเก็บไว้ในเครื่องนี้
-          ส่วนเซิร์ฟเวอร์ของเว็บนี้เห็นเพียงชื่อหุ้นเพื่อดึงราคาตลาด ไม่เห็นอีเมล วันเกิด หรือรายการซื้อขาย
+          ไฟล์ PDF ภาพหน้าจอ และอีเมลที่ดึงจาก Google ถูกอ่านในเบราว์เซอร์ของคุณ คำนวณและเก็บไว้ในเครื่องนี้
+          ไม่ถูกอัปโหลด เซิร์ฟเวอร์ของเว็บเห็นเพียงชื่อหุ้นเพื่อดึงราคาตลาด
         </figcaption>
       </figure>
       <ul className="space-y-3 text-sm">
-        <Fact icon={<Eye />} title="อ่านอย่างเดียว">
-          ส่ง ลบ หรือแก้ไขอีเมลไม่ได้ และยกเลิกสิทธิ์ได้ทุกเมื่อ
+        <Fact icon={<FileUp />} title="ไฟล์และรูปไม่ถูกอัปโหลด">
+          อ่านด้วยเบราว์เซอร์ในเครื่องนี้ ไม่ส่งไปที่ใด
         </Fact>
         <Fact icon={<LockKeyhole />} title="วันเกิดไม่ถูกบันทึก">
           ใช้เปิดไฟล์ PDF แล้วลืมทันทีเมื่อปิดหน้า
+        </Fact>
+        <Fact icon={<Eye />} title="Gmail อ่านอย่างเดียว">
+          ส่ง ลบ หรือแก้ไขอีเมลไม่ได้ และยกเลิกสิทธิ์ได้ทุกเมื่อ
         </Fact>
         <Fact icon={<ShieldCheck />} title="ตรวจสอบได้">
           การตั้งค่าความปลอดภัยของเว็บบังคับให้เบราว์เซอร์ส่งข้อมูลไปได้แค่ Google และเว็บนี้ ดูได้เองที่แท็บ Network
@@ -392,7 +410,7 @@ function Node({
   muted?: boolean
 }) {
   return (
-    <div className="flex w-20 shrink-0 flex-col items-center gap-2 text-center">
+    <div className="relative flex w-14 shrink-0 justify-center text-center">
       <span
         className={`flex size-12 items-center justify-center rounded-2xl [&_svg]:size-6 ${
           highlight ? 'bg-brand text-white' : muted ? 'bg-muted text-muted-foreground/60' : 'bg-brand-soft text-brand'
@@ -400,7 +418,12 @@ function Node({
       >
         {icon}
       </span>
-      <span className={`text-xs leading-snug ${muted ? 'text-muted-foreground' : 'font-medium'}`}>{label}</span>
+      {/* Below the icon, outside the row's height, so the lines meet the icons' middles. */}
+      <span
+        className={`absolute top-full left-1/2 mt-2 -translate-x-1/2 text-xs leading-snug ${muted ? 'text-muted-foreground w-16' : 'w-max font-medium'}`}
+      >
+        {label}
+      </span>
     </div>
   )
 }
@@ -408,7 +431,7 @@ function Node({
 /** The connector between two nodes: a flowing line, or a broken one with an ✕. */
 function Link({ blocked }: { blocked?: boolean }) {
   return (
-    <div className="relative mt-6 h-0.5 flex-1">
+    <div className="relative h-0.5 min-w-3 flex-1">
       {blocked ? (
         <>
           <div className="border-muted-foreground/40 absolute inset-x-0 top-0 border-t-2 border-dashed" />
