@@ -1,4 +1,16 @@
-import { Check, Eye, FileLock2, FileUp, LaptopMinimal, LockKeyhole, Mail, Server, ShieldCheck, X } from 'lucide-react'
+import {
+  Camera,
+  Check,
+  Eye,
+  FileLock2,
+  FileUp,
+  LaptopMinimal,
+  LockKeyhole,
+  Mail,
+  Server,
+  ShieldCheck,
+  X,
+} from 'lucide-react'
 import { useRef, useState, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -69,21 +81,21 @@ export function ConnectStep({
   disabled: boolean
 }) {
   return (
-    <StepPanel title="เอาใบยืนยันการซื้อขายจาก Dime! มาอ่าน">
+    <StepPanel title="อ่านใบยืนยันการซื้อขาย">
       <PdfDrop onFiles={onFiles} />
-      <button
-        type="button"
-        className="text-brand w-full text-center text-sm underline underline-offset-2"
-        onClick={onScreenshots}
-      >
-        ไม่มีไฟล์ PDF? ใช้ภาพหน้าจอคำสั่งจากแอป Dime! แทน
-      </button>
-      <div className="text-muted-foreground flex items-center gap-3 text-sm">
-        <span className="bg-border h-px flex-1" />
-        หรือดึงจากอีเมลให้อัตโนมัติ
-        <span className="bg-border h-px flex-1" />
+      <Divider>หรือใช้ภาพหน้าจอจากแอป Dime!</Divider>
+      <div className="space-y-3">
+        <p className="text-muted-foreground text-sm">
+          แคปหน้าจอ “รายละเอียดคำสั่ง” ในแอป แล้วอัปโหลดรูป เว็บอ่านตัวเลขให้ ตรวจแล้วกดบันทึกทีละคำสั่ง
+          ไม่ต้องใช้วันเกิด
+        </p>
+        <Button size="lg" variant="outline" className="h-12 w-full rounded-full text-base" onClick={onScreenshots}>
+          <Camera className="size-5" aria-hidden />
+          อัปโหลดภาพหน้าจอ
+        </Button>
       </div>
-      <p className="text-muted-foreground">
+      <Divider>หรือดึงจากอีเมลให้อัตโนมัติ</Divider>
+      <p className="text-muted-foreground text-sm">
         เว็บนี้ค้นหาเฉพาะอีเมลหัวข้อ “{EMAIL_SUBJECT}” เพื่อดึงไฟล์ใบยืนยันการซื้อขาย สิทธิ์เป็นแบบอ่านอย่างเดียว จึงส่ง
         ลบ หรือแก้ไขอีเมลของคุณไม่ได้
       </p>
@@ -166,6 +178,16 @@ function PdfDrop({ onFiles }: { onFiles: (files: File[]) => void }) {
           e.target.value = ''
         }}
       />
+    </div>
+  )
+}
+
+function Divider({ children }: { children: ReactNode }) {
+  return (
+    <div className="text-muted-foreground flex items-center gap-3 text-sm">
+      <span className="bg-border h-px flex-1" />
+      {children}
+      <span className="bg-border h-px flex-1" />
     </div>
   )
 }
