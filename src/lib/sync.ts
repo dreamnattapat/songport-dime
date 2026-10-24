@@ -21,6 +21,64 @@ export type SyncProgress = {
   firstError?: string
 }
 
+/** Rows from an uploaded PDF use `file:<hash>` where Gmail rows use the email's id. */
+export const FILE_PREFIX = 'file:'
+
+/** A short content hash, so uploading the same PDF twice replaces it instead of adding it again. */
+async function fileId(buffer: ArrayBuffer): Promise<string> {
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', buffer))
+  return FILE_PREFIX + [...digest.slice(0, 12)].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Reads Dime! confirmation PDFs the user picked from their device: the same parsing as the Gmail sync, no
+ * Google account involved. Orders already imported (from Gmail or an earlier upload) aren't added twice.
+ */
+export async function importPdfFiles(
+  files: File[],
+  pdfPassword: string,
+  onProgress: (progress: SyncProgress) => void,
+): Promise<SyncProgress> {
+  const progress: SyncProgress = { total: files.length, done: 0, added: 0, failed: 0 }
+  onProgress({ ...progress })
+  for (const file of files) {
+    try {
+      const buffer = await file.arrayBuffer()
+      // Hash first: pdf.js may take over (detach) the bytes it reads.
+      const id = await fileId(buffer)
+      const bytes = new Uint8Array(buffer)
+      const text = await extractText(bytes, pdfPassword)
+      const receivedAt = new Date(file.lastModified || Date.now()).toISOString()
+      const rows: Transaction[] = parseFields(text).map((parsed, index) => ({
+        ...parsed,
+        id: `${id}:${index}`,
+        gmailMessageId: id,
+        receivedAt,
+      }))
+      await db.transaction('rw', db.transactions, db.processedMessages, async () => {
+        await db.transactions.where('gmailMessageId').equals(id).delete()
+        const known = new Set(
+          (await db.transactions.toArray()).flatMap((t) => (t.parseStatus === 'ok' ? [t.orderId] : [])),
+        )
+        const fresh = rows.filter((r) => r.parseStatus !== 'ok' || !known.has(r.orderId))
+        await db.transactions.bulkPut(fresh)
+        await db.processedMessages.put({ id, processedAt: new Date().toISOString() })
+        if (fresh.length) progress.added++
+      })
+    } catch (error) {
+      // A wrong birthdate or an out-of-date page fails every file the same way.
+      if (error instanceof WrongPasswordError || error instanceof SiteUpdatedError) throw error
+      console.error(`Failed to read ${file.name}`, error)
+      progress.failed++
+      progress.firstError ??= `${file.name}: ${error instanceof Error ? error.message : String(error)}`
+    } finally {
+      progress.done++
+      onProgress({ ...progress })
+    }
+  }
+  return progress
+}
+
 // Parallel email downloads; small enough to stay well inside Gmail's rate limits.
 const CONCURRENCY = 4
 
@@ -60,6 +118,14 @@ export async function syncFromGmail(
       await db.transaction('rw', db.transactions, db.processedMessages, async () => {
         // Replace rows from an earlier attempt (e.g. an unparsed placeholder).
         await db.transactions.where('gmailMessageId').equals(messageId).delete()
+        // And the same orders if they came in earlier as an uploaded PDF, so nothing counts twice.
+        const orderIds = new Set(rows.flatMap((r) => (r.parseStatus === 'ok' ? [r.orderId] : [])))
+        if (orderIds.size)
+          await db.transactions
+            .filter(
+              (t) => t.gmailMessageId.startsWith(FILE_PREFIX) && t.parseStatus === 'ok' && orderIds.has(t.orderId),
+            )
+            .delete()
         await db.transactions.bulkPut(rows)
         await db.processedMessages.put({ id: messageId, processedAt: new Date().toISOString() })
       })

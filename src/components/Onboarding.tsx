@@ -1,5 +1,5 @@
-import { Check, Eye, FileLock2, LaptopMinimal, LockKeyhole, Mail, Server, ShieldCheck, X } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Check, Eye, FileLock2, FileUp, LaptopMinimal, LockKeyhole, Mail, Server, ShieldCheck, X } from 'lucide-react'
+import { useRef, useState, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,7 @@ import type { SyncProgress } from '@/lib/sync'
 
 export type Step = 1 | 2 | 3
 
-const STEPS = ['เชื่อมต่อ Gmail', 'ใส่วันเกิด', 'ดูพอร์ต'] as const
+const STEPS = ['หาไฟล์จาก Dime!', 'ใส่วันเกิด', 'ดูพอร์ต'] as const
 
 /** Where the user is in connect → birthdate → dashboard. */
 export function Stepper({ current }: { current: Step }) {
@@ -57,22 +57,31 @@ function StepPanel({ title, children }: { title: string; children: ReactNode }) 
 
 export function ConnectStep({
   onConnect,
+  onFiles,
   connecting,
   disabled,
 }: {
   onConnect: () => void
+  onFiles: (files: File[]) => void
   connecting: boolean
   disabled: boolean
 }) {
   return (
-    <StepPanel title="เชื่อมต่อ Gmail ที่ใช้รับอีเมลจาก Dime!">
+    <StepPanel title="เอาใบยืนยันการซื้อขายจาก Dime! มาอ่าน">
+      <PdfDrop onFiles={onFiles} />
+      <div className="text-muted-foreground flex items-center gap-3 text-sm">
+        <span className="bg-border h-px flex-1" />
+        หรือดึงจากอีเมลให้อัตโนมัติ
+        <span className="bg-border h-px flex-1" />
+      </div>
       <p className="text-muted-foreground">
         เว็บนี้ค้นหาเฉพาะอีเมลหัวข้อ “{EMAIL_SUBJECT}” เพื่อดึงไฟล์ใบยืนยันการซื้อขาย สิทธิ์เป็นแบบอ่านอย่างเดียว จึงส่ง
         ลบ หรือแก้ไขอีเมลของคุณไม่ได้
       </p>
       <Button
         size="lg"
-        className="bg-brand hover:bg-brand/90 h-12 w-full rounded-full text-base text-white"
+        variant="outline"
+        className="h-12 w-full rounded-full text-base"
         onClick={onConnect}
         disabled={disabled || connecting}
       >
@@ -103,6 +112,55 @@ export function ConnectStep({
   )
 }
 
+/** Pick or drop the PDF files Dime! emails after each trade (the "Confirmation Note" attachments). */
+function PdfDrop({ onFiles }: { onFiles: (files: File[]) => void }) {
+  const input = useRef<HTMLInputElement>(null)
+  const [over, setOver] = useState(false)
+  const take = (list: FileList | null) => {
+    const files = [...(list ?? [])].filter((f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'))
+    if (files.length) onFiles(files)
+  }
+  return (
+    <div
+      className={`space-y-3 rounded-2xl border-2 border-dashed p-5 text-center transition-colors ${over ? 'border-brand bg-brand-soft' : ''}`}
+      onDragOver={(e) => {
+        e.preventDefault()
+        setOver(true)
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault()
+        setOver(false)
+        take(e.dataTransfer.files)
+      }}
+    >
+      <p className="text-muted-foreground text-sm">
+        บันทึกไฟล์ PDF ที่แนบมาในอีเมลยืนยันการซื้อขายของ Dime! แล้วเลือกมาได้ทีละหลายไฟล์ ไฟล์ถูกอ่านในเครื่องนี้
+        ไม่ถูกส่งไปที่ใด ไม่ต้องให้สิทธิ์อะไรเลย
+      </p>
+      <Button
+        size="lg"
+        className="bg-brand hover:bg-brand/90 h-12 w-full rounded-full text-base text-white"
+        onClick={() => input.current?.click()}
+      >
+        <FileUp className="size-5" aria-hidden />
+        เลือกไฟล์ PDF
+      </Button>
+      <input
+        ref={input}
+        type="file"
+        accept="application/pdf,.pdf"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          take(e.target.files)
+          e.target.value = ''
+        }}
+      />
+    </div>
+  )
+}
+
 export function BirthdateStep({
   digits,
   onDigitsChange,
@@ -110,7 +168,11 @@ export function BirthdateStep({
   syncing,
   progress,
   wrongBirthdate,
+  files,
+  onCancelFiles,
 }: {
+  files?: File[] | null
+  onCancelFiles?: () => void
   digits: string
   onDigitsChange: (digits: string) => void
   onSubmit: () => void
@@ -123,6 +185,20 @@ export function BirthdateStep({
 
   return (
     <StepPanel title="ใส่วันเกิดเพื่อเปิดไฟล์ PDF">
+      {files && (
+        <p className="bg-muted rounded-xl px-3 py-2 text-sm">
+          เลือกไว้ {files.length} ไฟล์{' '}
+          {onCancelFiles && (
+            <button
+              type="button"
+              className="text-muted-foreground underline underline-offset-2"
+              onClick={onCancelFiles}
+            >
+              เปลี่ยน
+            </button>
+          )}
+        </p>
+      )}
       <p className="text-muted-foreground">
         Dime! ล็อกไฟล์ใบยืนยันการซื้อขายด้วยวันเกิดของคุณ วันเกิดใช้แค่เปิดไฟล์ในเครื่องนี้ ไม่ถูกบันทึกหรือส่งไปที่ใด
         และจะถูกลืมเมื่อปิดหน้านี้
@@ -169,15 +245,26 @@ export function BirthdateStep({
           disabled={!parsed || syncing}
         >
           <FileLock2 className="size-5" aria-hidden />
-          {syncing ? 'กำลังอ่านอีเมล…' : 'เปิดไฟล์และดูพอร์ต'}
+          {syncing ? (files ? 'กำลังอ่านไฟล์…' : 'กำลังอ่านอีเมล…') : 'เปิดไฟล์และดูพอร์ต'}
         </Button>
       </form>
-      {progress && <SyncStatus progress={progress} />}
+      {progress && <SyncStatus progress={progress} unit={files ? 'files' : 'emails'} />}
     </StepPanel>
   )
 }
 
-export function SyncStatus({ progress }: { progress: SyncProgress }) {
+export function SyncStatus({ progress, unit = 'emails' }: { progress: SyncProgress; unit?: 'emails' | 'files' }) {
+  if (unit === 'files')
+    return (
+      <div className="space-y-1.5">
+        <Progress value={progress.total ? (progress.done / progress.total) * 100 : 100} />
+        <p className="text-muted-foreground text-sm">
+          อ่านไฟล์แล้ว {progress.done} จาก {progress.total} ไฟล์
+          {progress.failed ? ` อ่านไม่ได้ ${progress.failed} ไฟล์` : ''}
+        </p>
+        {progress.firstError && <p className="text-destructive text-sm">ข้อผิดพลาดแรก: {progress.firstError}</p>}
+      </div>
+    )
   return (
     <div className="space-y-1.5">
       <Progress value={progress.total ? (progress.done / progress.total) * 100 : 100} />
@@ -206,7 +293,7 @@ export function DataPath() {
           <Node icon={<Server />} label="เซิร์ฟเวอร์ของเว็บ" muted />
         </div>
         <figcaption className="text-muted-foreground text-sm">
-          อีเมลถูกดึงจาก Google มาที่เบราว์เซอร์ของคุณโดยตรง คำนวณและเก็บไว้ในเครื่องนี้
+          ไฟล์ที่คุณเลือก หรืออีเมลที่ดึงจาก Google มาที่เบราว์เซอร์ของคุณโดยตรง ถูกคำนวณและเก็บไว้ในเครื่องนี้
           ส่วนเซิร์ฟเวอร์ของเว็บนี้เห็นเพียงชื่อหุ้นเพื่อดึงราคาตลาด ไม่เห็นอีเมล วันเกิด หรือรายการซื้อขาย
         </figcaption>
       </figure>

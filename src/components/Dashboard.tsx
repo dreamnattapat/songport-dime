@@ -302,7 +302,7 @@ function SummaryCard({
         <footer className="flex items-center gap-4">
           {/* Only stock trades come in by email, so cash held elsewhere in Dime! can't be counted. */}
           <div className="text-muted-foreground flex-1 space-y-1 text-xs leading-relaxed">
-            <p>จาก {tradeCount} รายการในอีเมล</p>
+            <p>จาก {tradeCount} รายการซื้อขาย</p>
             <p>ไม่รวมเงินใน Dime! Save, บัญชี FCD และเงินสด USD</p>
           </div>
           {score && <Stamp leadPct={score.leadPct} />}

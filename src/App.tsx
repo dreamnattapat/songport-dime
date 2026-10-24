@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, Eye, EyeOff, FileSpreadsheet, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, FileSpreadsheet, FileUp, RefreshCw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { Dashboard } from '@/components/Dashboard'
@@ -24,7 +24,7 @@ import type { Timeline } from '@/lib/benchmark'
 import { formatDateTime, localToday, setHideAmounts, type Currency } from '@/lib/format'
 import { clientId, disconnect, getAccessToken, hasValidToken, loadGoogleIdentity } from '@/lib/google/auth'
 import { SiteUpdatedError, WrongPasswordError } from '@/lib/pdf'
-import { syncFromGmail, type SyncProgress } from '@/lib/sync'
+import { importPdfFiles, syncFromGmail, type SyncProgress } from '@/lib/sync'
 
 export default function App() {
   // The birthdate lives only in this component's memory: never stored, never
@@ -32,6 +32,8 @@ export default function App() {
   const [birthdateDigits, setBirthdateDigits] = useState('')
   const [connected, setConnected] = useState(hasValidToken())
   const [connecting, setConnecting] = useState(false)
+  // PDFs picked from the device, waiting for the birthdate that opens them.
+  const [pickedFiles, setPickedFiles] = useState<File[] | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [progress, setProgress] = useState<SyncProgress | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -127,15 +129,21 @@ export default function App() {
     setSiteUpdated(false)
     setProgress(null)
     try {
-      const accessToken = await getAccessToken()
-      setConnected(true)
-      const result = await syncFromGmail(accessToken, birthdate.password, setProgress)
+      let result: SyncProgress
+      if (pickedFiles) {
+        result = await importPdfFiles(pickedFiles, birthdate.password, setProgress)
+        setPickedFiles(null)
+      } else {
+        const accessToken = await getAccessToken()
+        setConnected(true)
+        result = await syncFromGmail(accessToken, birthdate.password, setProgress)
+      }
       const now = new Date().toISOString()
       setLastSyncedAt(now)
       setSyncedAt(now)
       if ((await db.transactions.count()) > 0) setSetupOpen(false)
       // Only when Gmail has no Dime! emails at all; emails that failed to open show as failures instead.
-      else if (result.total === 0) setNoEmailsFound(true)
+      else if (result.total === 0 && !pickedFiles) setNoEmailsFound(true)
     } catch (e) {
       if (e instanceof WrongPasswordError) setWrongBirthdate(true)
       else if (e instanceof SiteUpdatedError) setSiteUpdated(true)
@@ -170,7 +178,7 @@ export default function App() {
   if (transactions === undefined) return null
 
   const showSetup = setupOpen || !hasData
-  const step = connected ? 2 : 1
+  const step = pickedFiles || connected ? 2 : 1
 
   return (
     <main className="mx-auto max-w-5xl space-y-8 px-4 pt-8 pb-12 sm:pt-12">
@@ -201,12 +209,12 @@ export default function App() {
                   ส่องพอร์ต Dime
                 </p>
                 <h1 className="font-display text-[1.75rem] leading-tight font-medium sm:text-4xl">
-                  สรุปพอร์ตจากอีเมลของคุณ
+                  สรุปพอร์ตจากใบยืนยันการซื้อขาย
                 </h1>
               </div>
               <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
-                กำไรขาดทุนทั้งพอร์ต อัตราชนะ และผลตอบแทนเทียบกับ S&P 500 คำนวณจากอีเมลยืนยันการซื้อขายใน Gmail ของคุณ
-                ใช้ฟรี ไม่ต้องสมัครสมาชิก
+                กำไรขาดทุนทั้งพอร์ต อัตราชนะ และผลตอบแทนเทียบกับ S&P 500 คำนวณจากไฟล์ใบยืนยันการซื้อขายของ Dime!
+                (อัปโหลดเอง หรือดึงจาก Gmail) ใช้ฟรี ไม่ต้องสมัครสมาชิก
               </p>
             </header>
           )}
@@ -214,7 +222,15 @@ export default function App() {
           <Stepper current={step} />
 
           {step === 1 ? (
-            <ConnectStep onConnect={() => void connect()} connecting={connecting} disabled={!clientId} />
+            <ConnectStep
+              onConnect={() => void connect()}
+              onFiles={(files) => {
+                setProgress(null)
+                setPickedFiles(files)
+              }}
+              connecting={connecting}
+              disabled={!clientId}
+            />
           ) : (
             <BirthdateStep
               digits={birthdateDigits}
@@ -226,6 +242,8 @@ export default function App() {
               syncing={syncing}
               progress={progress}
               wrongBirthdate={wrongBirthdate}
+              files={pickedFiles}
+              onCancelFiles={() => setPickedFiles(null)}
             />
           )}
 
@@ -341,10 +359,32 @@ export default function App() {
               </div>
               {lastSynced && <p className="text-muted-foreground text-sm">ซิงก์ล่าสุด {formatDateTime(lastSynced)}</p>}
             </div>
-            <Button variant="outline" className="bg-card rounded-full" onClick={syncFromDashboard} disabled={syncing}>
-              <RefreshCw className={syncing ? 'animate-spin' : undefined} aria-hidden />
-              {syncing ? 'กำลังดึงอีเมลใหม่…' : 'ดึงอีเมลใหม่'}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" className="bg-card rounded-full" asChild>
+                <label>
+                  <FileUp aria-hidden />
+                  เพิ่มไฟล์ PDF
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = [...(e.target.files ?? [])]
+                      e.target.value = ''
+                      if (!files.length) return
+                      setProgress(null)
+                      setPickedFiles(files)
+                      setSetupOpen(true)
+                    }}
+                  />
+                </label>
+              </Button>
+              <Button variant="outline" className="bg-card rounded-full" onClick={syncFromDashboard} disabled={syncing}>
+                <RefreshCw className={syncing ? 'animate-spin' : undefined} aria-hidden />
+                {syncing ? 'กำลังดึงอีเมลใหม่…' : 'ดึงจาก Gmail'}
+              </Button>
+            </div>
           </header>
 
           {syncing && progress && <SyncStatus progress={progress} />}
