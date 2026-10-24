@@ -13,7 +13,7 @@ const SYMBOL_RE = /^[A-Z0-9.=^-]{1,15}$/
 const ALLOWED_PARAMS = ['period1', 'period2', 'interval', 'events']
 // Prices move during US market hours; 15 minutes is fresh enough for a dashboard.
 const CACHE_SECONDS = 900
-const TRADE_DESK = 'https://trade-lab.dreamnattapat.workers.dev'
+const TRADE_DESK = 'https://let-claude-cook.dreamnattapat.workers.dev'
 
 export default {
   async fetch(request: Request): Promise<Response> {
