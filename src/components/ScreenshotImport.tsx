@@ -1,5 +1,5 @@
 import { Camera, Check } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,7 +26,7 @@ const EMPTY: Draft = {
  * Add an order from screenshots of the Dime! app's order details screen: read in this browser, shown on a form
  * to check and correct, then saved. One order at a time (its screen often takes two screenshots).
  */
-export function ScreenshotImport({ onSaved }: { onSaved: () => void }) {
+export function ScreenshotImport({ onSaved, initialFiles }: { onSaved: () => void; initialFiles?: File[] | null }) {
   const input = useRef<HTMLInputElement>(null)
   const [reading, setReading] = useState<number | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -62,6 +62,12 @@ export function ScreenshotImport({ onSaved }: { onSaved: () => void }) {
       setReading(null)
     }
   }
+
+  // Screenshots picked before this page opened: read them straight away (once per pick).
+  useEffect(() => {
+    if (initialFiles?.length) void read(initialFiles)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFiles])
 
   const num = (v: string) => (v.trim() === '' ? NaN : Number(v.replace(/,/g, '')))
   const order: ManualOrder | null = draft
@@ -122,8 +128,9 @@ export function ScreenshotImport({ onSaved }: { onSaved: () => void }) {
   return (
     <div className="space-y-3">
       <p className="text-muted-foreground text-sm">
-        ในแอป Dime! เปิดคำสั่งซื้อหรือขายที่ต้องการ (หน้า “รายละเอียดคำสั่ง”) แคปหน้าจอให้เห็นตั้งแต่ชื่อหุ้นจนถึงเลขที่คำสั่ง
-        (มักเป็น 2 ภาพ) แล้วเลือกภาพของคำสั่งเดียวกันพร้อมกัน ภาพถูกอ่านในเครื่องนี้ ไม่ถูกส่งไปที่ใด
+        ในแอป Dime! เปิดคำสั่งซื้อหรือขายที่ต้องการ (หน้า “รายละเอียดคำสั่ง”)
+        แคปหน้าจอให้เห็นตั้งแต่ชื่อหุ้นจนถึงเลขที่คำสั่ง (มักเป็น 2 ภาพ) แล้วเลือกภาพของคำสั่งเดียวกันพร้อมกัน
+        ภาพถูกอ่านในเครื่องนี้ ไม่ถูกส่งไปที่ใด
       </p>
       <Button
         size="lg"

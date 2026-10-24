@@ -76,11 +76,12 @@ export function ConnectStep({
 }: {
   onConnect: () => void
   onFiles: (files: File[]) => void
-  onScreenshots: () => void
+  onScreenshots: (files: File[]) => void
   connecting: boolean
   disabled: boolean
 }) {
   const pdfInput = useRef<HTMLInputElement>(null)
+  const shotInput = useRef<HTMLInputElement>(null)
   const [over, setOver] = useState(false)
   const takePdfs = (list: FileList | null) => {
     const files = [...(list ?? [])].filter((f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'))
@@ -128,7 +129,19 @@ export function ConnectStep({
           badge="ไม่ต้องใช้วันเกิด"
           description="แคปหน้า “รายละเอียดคำสั่ง” ในแอป Dime! เว็บอ่านตัวเลขให้ ตรวจแล้วบันทึกทีละคำสั่ง"
           action="อัปโหลดภาพหน้าจอ"
-          onAction={onScreenshots}
+          onAction={() => shotInput.current?.click()}
+        />
+        <input
+          ref={shotInput}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = [...(e.target.files ?? [])]
+            e.target.value = ''
+            if (files.length) onScreenshots(files)
+          }}
         />
         <OptionCard
           icon={<Mail />}

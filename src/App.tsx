@@ -37,6 +37,14 @@ export default function App() {
   const [pickedFiles, setPickedFiles] = useState<File[] | null>(null)
   // Adding orders from screenshots of the Dime! app instead.
   const [shotsOpen, setShotsOpen] = useState(false)
+  // Screenshots already picked (from the dashboard or the first step), read as soon as the page opens.
+  const [shotFiles, setShotFiles] = useState<File[] | null>(null)
+
+  function openScreenshots(files: File[]) {
+    setShotFiles(files)
+    setShotsOpen(true)
+    setSetupOpen(true)
+  }
   const [syncing, setSyncing] = useState(false)
   const [progress, setProgress] = useState<SyncProgress | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -238,9 +246,11 @@ export default function App() {
                 </Button>
               )}
               <ScreenshotImport
+                initialFiles={shotFiles}
                 onSaved={() => {
                   // Saved: straight to the portfolio, where "เพิ่มจากภาพหน้าจอ" adds the next one.
                   setSyncedAt(new Date().toISOString())
+                  setShotFiles(null)
                   setShotsOpen(false)
                   setSetupOpen(false)
                 }}
@@ -257,7 +267,7 @@ export default function App() {
                 setProgress(null)
                 setPickedFiles(files)
               }}
-              onScreenshots={() => setShotsOpen(true)}
+              onScreenshots={openScreenshots}
               connecting={connecting}
               disabled={!clientId}
             />
@@ -410,16 +420,22 @@ export default function App() {
                   />
                 </label>
               </Button>
-              <Button
-                variant="outline"
-                className="bg-card rounded-full"
-                onClick={() => {
-                  setShotsOpen(true)
-                  setSetupOpen(true)
-                }}
-              >
-                <Camera aria-hidden />
-                เพิ่มจากภาพหน้าจอ
+              <Button variant="outline" className="bg-card rounded-full" asChild>
+                <label>
+                  <Camera aria-hidden />
+                  เพิ่มจากภาพหน้าจอ
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = [...(e.target.files ?? [])]
+                      e.target.value = ''
+                      if (files.length) openScreenshots(files)
+                    }}
+                  />
+                </label>
               </Button>
               <Button variant="outline" className="bg-card rounded-full" onClick={syncFromDashboard} disabled={syncing}>
                 <RefreshCw className={syncing ? 'animate-spin' : undefined} aria-hidden />
