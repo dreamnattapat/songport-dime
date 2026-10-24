@@ -46,7 +46,7 @@ export function Stepper({ current }: { current: Step }) {
   )
 }
 
-function StepPanel({ title, children }: { title: string; children: ReactNode }) {
+export function StepPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="bg-card space-y-5 rounded-3xl p-6 shadow-[0_1px_2px_rgb(120_60_20/0.06),0_8px_24px_rgb(120_60_20/0.07)] sm:p-8">
       <h2 className="font-display text-xl font-medium">{title}</h2>
@@ -58,17 +58,26 @@ function StepPanel({ title, children }: { title: string; children: ReactNode }) 
 export function ConnectStep({
   onConnect,
   onFiles,
+  onScreenshots,
   connecting,
   disabled,
 }: {
   onConnect: () => void
   onFiles: (files: File[]) => void
+  onScreenshots: () => void
   connecting: boolean
   disabled: boolean
 }) {
   return (
     <StepPanel title="เอาใบยืนยันการซื้อขายจาก Dime! มาอ่าน">
       <PdfDrop onFiles={onFiles} />
+      <button
+        type="button"
+        className="text-brand w-full text-center text-sm underline underline-offset-2"
+        onClick={onScreenshots}
+      >
+        ไม่มีไฟล์ PDF? ใช้ภาพหน้าจอคำสั่งจากแอป Dime! แทน
+      </button>
       <div className="text-muted-foreground flex items-center gap-3 text-sm">
         <span className="bg-border h-px flex-1" />
         หรือดึงจากอีเมลให้อัตโนมัติ

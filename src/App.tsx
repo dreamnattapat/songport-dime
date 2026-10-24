@@ -1,9 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, Eye, EyeOff, FileSpreadsheet, FileUp, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Camera, Eye, EyeOff, FileSpreadsheet, FileUp, RefreshCw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { Dashboard } from '@/components/Dashboard'
-import { BirthdateStep, ConnectStep, DataPath, Stepper, SyncStatus } from '@/components/Onboarding'
+import { BirthdateStep, ConnectStep, DataPath, Stepper, StepPanel, SyncStatus } from '@/components/Onboarding'
+import { ScreenshotImport } from '@/components/ScreenshotImport'
 import { Support } from '@/components/Support'
 import { TransactionsTable } from '@/components/TransactionsTable'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -34,6 +35,8 @@ export default function App() {
   const [connecting, setConnecting] = useState(false)
   // PDFs picked from the device, waiting for the birthdate that opens them.
   const [pickedFiles, setPickedFiles] = useState<File[] | null>(null)
+  // Adding orders from screenshots of the Dime! app instead.
+  const [shotsOpen, setShotsOpen] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [progress, setProgress] = useState<SyncProgress | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -219,15 +222,38 @@ export default function App() {
             </header>
           )}
 
-          <Stepper current={step} />
+          {shotsOpen ? (
+            <StepPanel title="เพิ่มรายการจากภาพหน้าจอ">
+              <ScreenshotImport onSaved={() => setSyncedAt(new Date().toISOString())} />
+              <div className="flex flex-wrap gap-2">
+                {hasData && (
+                  <Button
+                    className="bg-brand hover:bg-brand/90 rounded-full text-white"
+                    onClick={() => {
+                      setShotsOpen(false)
+                      setSetupOpen(false)
+                    }}
+                  >
+                    ดูพอร์ต
+                  </Button>
+                )}
+                <Button variant="ghost" className="rounded-full" onClick={() => setShotsOpen(false)}>
+                  ใช้ไฟล์ PDF หรือ Gmail แทน
+                </Button>
+              </div>
+            </StepPanel>
+          ) : (
+            <Stepper current={step} />
+          )}
 
-          {step === 1 ? (
+          {shotsOpen ? null : step === 1 ? (
             <ConnectStep
               onConnect={() => void connect()}
               onFiles={(files) => {
                 setProgress(null)
                 setPickedFiles(files)
               }}
+              onScreenshots={() => setShotsOpen(true)}
               connecting={connecting}
               disabled={!clientId}
             />
@@ -379,6 +405,17 @@ export default function App() {
                     }}
                   />
                 </label>
+              </Button>
+              <Button
+                variant="outline"
+                className="bg-card rounded-full"
+                onClick={() => {
+                  setShotsOpen(true)
+                  setSetupOpen(true)
+                }}
+              >
+                <Camera aria-hidden />
+                เพิ่มจากภาพหน้าจอ
               </Button>
               <Button variant="outline" className="bg-card rounded-full" onClick={syncFromDashboard} disabled={syncing}>
                 <RefreshCw className={syncing ? 'animate-spin' : undefined} aria-hidden />

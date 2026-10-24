@@ -11,6 +11,7 @@ import { db, type Transaction } from '@/lib/db'
 import { parseFields } from '@/lib/dime/parser'
 import { fetchPdfAttachment, findDimeMessageIds } from '@/lib/google/gmail'
 import { extractText, SiteUpdatedError, WrongPasswordError } from '@/lib/pdf'
+import { fetchPrices } from '@/lib/prices'
 
 export type SyncProgress = {
   total: number
@@ -77,6 +78,86 @@ export async function importPdfFiles(
     }
   }
   return progress
+}
+
+/** Rows read from app screenshots use `shot:<order number>`. */
+export const SHOT_PREFIX = 'shot:'
+
+/** One order typed in or read from Dime! app screenshots, checked by the person on the review form. */
+export type ManualOrder = {
+  side: 'Buy' | 'Sell'
+  security: string
+  exchange: string | null
+  units: number
+  unitPrice: number
+  grossAmount: number
+  fees: number
+  tradeDate: string
+  orderId: string | null
+}
+
+const EXCHANGE_MIC: Record<string, string> = { NYSE: 'XNYS', NASDAQ: 'XNAS', AMEX: 'XASE', ARCA: 'ARCX' }
+
+/**
+ * Saves an order from screenshots. The app shows dollars only; the baht figures the dashboard also uses come
+ * from the USD/THB rate of the trade date. Returns 'duplicate' when an order like it (same stock, type, units,
+ * within three days) is already there, from a PDF, Gmail or an earlier screenshot.
+ */
+export async function saveManualOrder(order: ManualOrder): Promise<'saved' | 'duplicate'> {
+  const days = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) / 86_400_000
+  const existing = (await db.transactions.toArray()).find(
+    (t) =>
+      t.parseStatus === 'ok' &&
+      t.security === order.security &&
+      t.transactionType === order.side &&
+      Math.abs(t.units - order.units) < 1e-6 &&
+      days(t.effectiveDate ?? t.settlementDate, order.tradeDate) <= 3,
+  )
+  if (existing) return 'duplicate'
+
+  const fx = await fetchPrices('THB=X', order.tradeDate, order.tradeDate)
+  const rate = fx.on(order.tradeDate)
+  if (!rate) throw new Error('ดึงอัตราแลกเปลี่ยน USD/THB ของวันนั้นไม่ได้ ลองใหม่อีกครั้ง')
+  const total = order.side === 'Buy' ? order.grossAmount + order.fees : order.grossAmount - order.fees
+  const key = SHOT_PREFIX + (order.orderId ?? `${order.security}-${order.tradeDate}-${order.units}`)
+  const thb = (usd: number) => Math.round(usd * rate * 100) / 100
+  const row: Transaction = {
+    id: `${key}:0`,
+    gmailMessageId: key,
+    receivedAt: new Date().toISOString(),
+    parseStatus: 'ok',
+    orderId: order.orderId ?? key,
+    settlementDate: order.tradeDate,
+    transactionType: order.side,
+    security: order.security,
+    units: order.units,
+    unitPrice: order.unitPrice,
+    currency: 'USD',
+    grossAmount: order.grossAmount,
+    vat: order.fees,
+    withholdingTax: 0,
+    totalAmount: Math.round(total * 100) / 100,
+    exchange: order.exchange ? (EXCHANGE_MIC[order.exchange] ?? order.exchange) : null,
+    grossAmountThb: thb(order.grossAmount),
+    vatThb: thb(order.fees),
+    withholdingTaxThb: 0,
+    totalAmountThb: thb(total),
+    accountNo: null,
+    taxInvoiceNo: null,
+    totalBuyThb: null,
+    totalSellThb: null,
+    totalFeeThb: null,
+    totalVatThb: null,
+    totalWithholdingTaxThb: null,
+    fxRateThbUsd: rate,
+    effectiveDate: order.tradeDate,
+    issueDate: order.tradeDate,
+  }
+  await db.transaction('rw', db.transactions, db.processedMessages, async () => {
+    await db.transactions.put(row)
+    await db.processedMessages.put({ id: key, processedAt: new Date().toISOString() })
+  })
+  return 'saved'
 }
 
 // Parallel email downloads; small enough to stay well inside Gmail's rate limits.
