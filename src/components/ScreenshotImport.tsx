@@ -106,13 +106,14 @@ export function ScreenshotImport({ onSaved }: { onSaved: () => void }) {
     }
   }
 
-  const field = (key: keyof Draft, label: string, props: React.ComponentProps<typeof Input> = {}) => (
-    <label className="block space-y-1">
+  const field = (key: keyof Draft, label: string, props: React.ComponentProps<typeof Input> = {}, wide = false) => (
+    <label className={`block min-w-0 space-y-1 ${wide ? 'col-span-2' : ''}`}>
       <span className="text-muted-foreground text-xs">{label}</span>
       <Input
         value={draft?.[key] ?? ''}
         onChange={(e) => setDraft((d) => d && { ...d, [key]: e.target.value })}
-        className="tabular-nums"
+        // iPhone Safari gives date inputs their own size and look: keep every box the same.
+        className="h-9 w-full min-w-0 appearance-none tabular-nums"
         {...props}
       />
     </label>
@@ -174,7 +175,7 @@ export function ScreenshotImport({ onSaved }: { onSaved: () => void }) {
         >
           <p className="text-sm font-semibold">ตรวจตัวเลขให้ตรงกับในแอป แล้วกดบันทึก</p>
           <div className="grid grid-cols-2 gap-3">
-            <label className="block space-y-1">
+            <label className="block min-w-0 space-y-1">
               <span className="text-muted-foreground text-xs">ประเภท</span>
               <select
                 className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
@@ -189,9 +190,9 @@ export function ScreenshotImport({ onSaved }: { onSaved: () => void }) {
             {field('units', 'จำนวนหุ้น', { inputMode: 'decimal' })}
             {field('unitPrice', 'ราคาที่ได้จริง (USD)', { inputMode: 'decimal' })}
             {field('grossAmount', 'มูลค่าหุ้น (USD)', { inputMode: 'decimal' })}
-            {field('fees', 'ค่าธรรมเนียมรวม หลังส่วนลด (USD)', { inputMode: 'decimal' })}
-            {field('tradeDate', 'วันที่ซื้อขาย (เวลานิวยอร์ก)', { type: 'date' })}
-            {field('orderId', 'เลขที่คำสั่ง')}
+            {field('fees', 'ค่าธรรมเนียม (USD)', { inputMode: 'decimal' })}
+            {field('tradeDate', 'วันที่ซื้อขาย (เวลานิวยอร์ก)', { type: 'date' }, true)}
+            {field('orderId', 'เลขที่คำสั่ง (ไม่ใส่ก็ได้)', {}, true)}
           </div>
           {order && valid && Math.abs(order.units * order.unitPrice - order.grossAmount) > order.grossAmount * 0.01 && (
             <p className="text-destructive text-xs">จำนวนหุ้น × ราคา ไม่ตรงกับมูลค่าหุ้น ลองตรวจอีกครั้ง</p>

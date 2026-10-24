@@ -84,12 +84,16 @@ export function ConnectStep({
     <StepPanel title="อ่านใบยืนยันการซื้อขาย">
       <PdfDrop onFiles={onFiles} />
       <Divider>หรือใช้ภาพหน้าจอจากแอป Dime!</Divider>
-      <div className="space-y-3">
+      <div className="space-y-3 rounded-2xl border-2 border-dashed p-5 text-center">
         <p className="text-muted-foreground text-sm">
           แคปหน้าจอ “รายละเอียดคำสั่ง” ในแอป แล้วอัปโหลดรูป เว็บอ่านตัวเลขให้ ตรวจแล้วกดบันทึกทีละคำสั่ง
           ไม่ต้องใช้วันเกิด
         </p>
-        <Button size="lg" variant="outline" className="h-12 w-full rounded-full text-base" onClick={onScreenshots}>
+        <Button
+          size="lg"
+          className="bg-brand hover:bg-brand/90 h-12 w-full rounded-full text-base text-white"
+          onClick={onScreenshots}
+        >
           <Camera className="size-5" aria-hidden />
           อัปโหลดภาพหน้าจอ
         </Button>

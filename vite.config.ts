@@ -3,6 +3,12 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+import { copyOcr } from './scripts/copy-ocr.mjs'
+
+// The screenshot reader's files (public/ocr/, not committed), copied whenever Vite starts: however the site is
+// built (npm run build, npx vite build, Cloudflare's build), they're there.
+copyOcr()
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],

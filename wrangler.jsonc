@@ -4,6 +4,8 @@
   "compatibility_date": "2026-10-01",
   // The price proxy (ticker symbols only); see worker/index.ts.
   "main": "worker/index.ts",
+  // Build the site before every deploy, so a plain `wrangler deploy` works too.
+  "build": { "command": "npm run build" },
   // The built site in dist/. Requests are served from it, except /api/*,
   // which goes to the Worker.
   "assets": {
