@@ -200,7 +200,15 @@ export default function App() {
       {showSetup ? (
         <div className="mx-auto max-w-xl space-y-8">
           {hasData ? (
-            <Button variant="ghost" size="sm" className="-ml-3" onClick={() => setSetupOpen(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-ml-3"
+              onClick={() => {
+                setShotsOpen(false)
+                setSetupOpen(false)
+              }}
+            >
               <ArrowLeft aria-hidden />
               กลับไปดูพอร์ต
             </Button>
@@ -223,23 +231,20 @@ export default function App() {
 
           {shotsOpen ? (
             <StepPanel title="เพิ่มรายการจากภาพหน้าจอ">
-              <ScreenshotImport onSaved={() => setSyncedAt(new Date().toISOString())} />
-              <div className="flex flex-wrap gap-2">
-                {hasData && (
-                  <Button
-                    className="bg-brand hover:bg-brand/90 rounded-full text-white"
-                    onClick={() => {
-                      setShotsOpen(false)
-                      setSetupOpen(false)
-                    }}
-                  >
-                    ดูพอร์ต
-                  </Button>
-                )}
-                <Button variant="ghost" className="rounded-full" onClick={() => setShotsOpen(false)}>
-                  ใช้ไฟล์ PDF หรือ Gmail แทน
+              {!hasData && (
+                <Button variant="ghost" size="sm" className="-mt-3 -ml-3" onClick={() => setShotsOpen(false)}>
+                  <ArrowLeft aria-hidden />
+                  ย้อนกลับ
                 </Button>
-              </div>
+              )}
+              <ScreenshotImport
+                onSaved={() => {
+                  // Saved: straight to the portfolio, where "เพิ่มจากภาพหน้าจอ" adds the next one.
+                  setSyncedAt(new Date().toISOString())
+                  setShotsOpen(false)
+                  setSetupOpen(false)
+                }}
+              />
             </StepPanel>
           ) : (
             <Stepper current={step} />
