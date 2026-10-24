@@ -122,13 +122,12 @@ export function ScreenshotImport({ onSaved }: { onSaved: () => void }) {
   return (
     <div className="space-y-3">
       <p className="text-muted-foreground text-sm">
-        ในแอป Dime! เปิดคำสั่งซื้อที่ต้องการ (หน้า “รายละเอียดคำสั่ง”) แคปหน้าจอให้เห็นตั้งแต่ชื่อหุ้นจนถึงเลขที่คำสั่ง
+        ในแอป Dime! เปิดคำสั่งซื้อหรือขายที่ต้องการ (หน้า “รายละเอียดคำสั่ง”) แคปหน้าจอให้เห็นตั้งแต่ชื่อหุ้นจนถึงเลขที่คำสั่ง
         (มักเป็น 2 ภาพ) แล้วเลือกภาพของคำสั่งเดียวกันพร้อมกัน ภาพถูกอ่านในเครื่องนี้ ไม่ถูกส่งไปที่ใด
       </p>
       <Button
         size="lg"
-        variant="outline"
-        className="h-12 w-full rounded-full text-base"
+        className="bg-brand hover:bg-brand/90 h-12 w-full rounded-full text-base text-white"
         disabled={reading != null}
         onClick={() => input.current?.click()}
       >
