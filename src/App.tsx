@@ -216,8 +216,7 @@ export default function App() {
                 </h1>
               </div>
               <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
-                กำไรขาดทุนทั้งพอร์ต อัตราชนะ และผลตอบแทนเทียบกับ S&P 500 คำนวณจากไฟล์ใบยืนยันการซื้อขายของ Dime!
-                (อัปโหลดเอง หรือดึงจาก Gmail) ใช้ฟรี ไม่ต้องสมัครสมาชิก
+                ดูกำไรขาดทุนและเทียบกับ S&P 500 ฟรี ไม่ต้องสมัคร
               </p>
             </header>
           )}
