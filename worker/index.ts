@@ -6,7 +6,13 @@
  * Only a ticker symbol and a date range ever reach this Worker. It passes
  * through just those parameters and logs nothing. Vite's dev server does the
  * same forwarding locally (vite.config.ts).
+ *
+ * /api/usage is the anonymous usage total for the home page (worker/usage.ts).
  */
+
+import { handleUsage, UsageCounter } from './usage'
+
+export { UsageCounter }
 
 const YAHOO_CHART = 'https://query1.finance.yahoo.com/v8/finance/chart/'
 const SYMBOL_RE = /^[A-Z0-9.=^-]{1,15}$/
@@ -16,8 +22,9 @@ const CACHE_SECONDS = 900
 const TRADE_DESK = 'https://let-claude-trade.dreamnattapat.workers.dev'
 
 export default {
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, env: Parameters<typeof handleUsage>[1]): Promise<Response> {
     const url = new URL(request.url)
+    if (url.pathname === '/api/usage') return handleUsage(request, env)
     // Team Lynch moved to the trade lab site (แล็บเทรด).
     if (/^\/(lynch|dream)\/?$/.test(url.pathname)) return Response.redirect(TRADE_DESK + '/lynch', 301)
     const symbol = decodeURIComponent(url.pathname.replace(/^\/api\/chart\//, ''))

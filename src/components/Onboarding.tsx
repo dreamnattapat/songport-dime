@@ -10,6 +10,7 @@ import {
   Server,
   ShieldCheck,
   X,
+  Hash,
 } from 'lucide-react'
 import { useRef, useState, type ReactNode } from 'react'
 
@@ -412,7 +413,8 @@ export function DataPath() {
         </div>
         <figcaption className="text-muted-foreground text-sm">
           ไฟล์ PDF ภาพหน้าจอ และอีเมลที่ดึงจาก Google ถูกอ่านในเบราว์เซอร์ของคุณ คำนวณและเก็บไว้ในเครื่องนี้
-          ไม่ถูกอัปโหลด เซิร์ฟเวอร์ของเว็บเห็นเพียงชื่อหุ้นเพื่อดึงราคาตลาด
+          ไม่ถูกอัปโหลด เซิร์ฟเวอร์ของเว็บเห็นเพียงชื่อหุ้นเพื่อดึงราคาตลาด และจำนวนครั้งที่ใช้ (เช่น &ldquo;อ่าน PDF
+          +3&rdquo;) โดยไม่รู้ว่าเป็นใครหรือมีหุ้นอะไร
         </figcaption>
       </figure>
       <ul className="space-y-3 text-sm">
@@ -424,6 +426,10 @@ export function DataPath() {
         </Fact>
         <Fact icon={<Eye />} title="Gmail อ่านอย่างเดียว">
           ส่ง ลบ หรือแก้ไขอีเมลไม่ได้ และยกเลิกสิทธิ์ได้ทุกเมื่อ
+        </Fact>
+        <Fact icon={<Hash />} title="นับแค่จำนวนครั้ง">
+          เว็บนับว่าอ่าน PDF ภาพหน้าจอ และดึงจาก Gmail ไปกี่ครั้งรวมทุกคน ไม่ส่งชื่อหุ้น ยอดเงิน อีเมล
+          หรือข้อมูลที่ระบุตัวคุณ
         </Fact>
         <Fact icon={<ShieldCheck />} title="ตรวจสอบได้">
           การตั้งค่าความปลอดภัยของเว็บบังคับให้เบราว์เซอร์ส่งข้อมูลไปได้แค่ Google และเว็บนี้ ดูได้เองที่แท็บ Network

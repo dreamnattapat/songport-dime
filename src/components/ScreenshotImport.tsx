@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import { parseScreenshotText } from '@/lib/dime/screenshot'
 import { readScreenshots } from '@/lib/ocr'
+import { reportUsage } from '@/lib/usage'
 import { saveManualOrder, type ManualOrder } from '@/lib/sync'
 
 type Draft = { [K in keyof ManualOrder]: string }
@@ -51,7 +52,8 @@ export function ScreenshotImport({ onSaved, initialFiles }: { onSaved: () => voi
         tradeDate: s(o.tradeDate),
         orderId: s(o.orderId),
       })
-      if (!o.security || !o.grossAmount)
+      if (o.security && o.grossAmount) reportUsage('shot', files.length)
+      else
         setMessage({
           tone: 'error',
           text: 'อ่านได้ไม่ครบ ลองใช้ภาพหน้าจอ "รายละเอียดคำสั่ง" ที่เห็นชื่อหุ้นและมูลค่าหุ้น หรือกรอกเองด้านล่าง',

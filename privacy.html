@@ -78,7 +78,11 @@
         Like any website host, Cloudflare processes basic technical request information (such as IP address and
         browser type) to deliver the pages and protect against abuse, under
         <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noreferrer">Cloudflare's privacy policy</a>.
-        The app does not use cookies, analytics, advertising, or tracking of any kind.
+        The app does not use cookies, advertising, or tracking of any kind. The only thing it counts is how much it
+        has been used, in total, by everyone, for a line on the home page: after a successful read the page sends
+        just the kind and the number (for example "PDF +3", "screenshots +2" or "Gmail sync +1"). No file, ticker,
+        amount, email address, account detail or identifier is sent with it, and the counter (worker/usage.ts in the
+        source code) stores only the three running totals.
       </p>
 
       <h2>Google sign-in</h2>

@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowLeft, Camera, Eye, EyeOff, FileSpreadsheet, FileUp, RefreshCw } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 
 import { Dashboard } from '@/components/Dashboard'
 import { BirthdateStep, ConnectStep, DataPath, Stepper, StepPanel, SyncStatus } from '@/components/Onboarding'
@@ -26,6 +26,7 @@ import { formatDateTime, localToday, setHideAmounts, type Currency } from '@/lib
 import { clientId, disconnect, getAccessToken, hasValidToken, loadGoogleIdentity } from '@/lib/google/auth'
 import { SiteUpdatedError, WrongPasswordError } from '@/lib/pdf'
 import { importPdfFiles, syncFromGmail, type SyncProgress } from '@/lib/sync'
+import { fetchUsage, reportUsage, SHOW_USAGE_FROM, type UsageCounts } from '@/lib/usage'
 
 export default function App() {
   // The birthdate lives only in this component's memory: never stored, never
@@ -143,11 +144,13 @@ export default function App() {
       let result: SyncProgress
       if (pickedFiles) {
         result = await importPdfFiles(pickedFiles, birthdate.password, setProgress)
+        reportUsage('pdf', result.done - result.failed)
         setPickedFiles(null)
       } else {
         const accessToken = await getAccessToken()
         setConnected(true)
         result = await syncFromGmail(accessToken, birthdate.password, setProgress)
+        reportUsage('gmail', 1)
       }
       const now = new Date().toISOString()
       setLastSyncedAt(now)
@@ -234,6 +237,7 @@ export default function App() {
               <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
                 ใช้ฟรี ไม่ต้องสมัครสมาชิก ไม่เก็บข้อมูล
               </p>
+              <UsageLine />
             </header>
           )}
 
@@ -501,5 +505,33 @@ export default function App() {
         <p>เว็บไซต์นี้ไม่มีส่วนเกี่ยวข้องกับ Dime! หรือ KKP Dime Securities Company Limited</p>
       </footer>
     </main>
+  )
+}
+
+/** How much the app has been used, by everyone: shown once the totals add up to SHOW_USAGE_FROM. */
+function UsageLine() {
+  const [counts, setCounts] = useState<UsageCounts | null>(null)
+  useEffect(() => {
+    void fetchUsage().then(setCounts)
+  }, [])
+  if (!counts || counts.pdf + counts.shot + counts.gmail < SHOW_USAGE_FROM) return null
+  const n = (v: number) => v.toLocaleString('th-TH')
+  const parts = [
+    counts.pdf > 0 && `อ่านใบยืนยัน PDF ${n(counts.pdf)} ไฟล์`,
+    counts.shot > 0 && `ภาพหน้าจอ ${n(counts.shot)} ภาพ`,
+    counts.gmail > 0 && `ดึงจาก Gmail ${n(counts.gmail)} ครั้ง`,
+  ].filter(Boolean)
+  return (
+    <p className="text-muted-foreground text-sm">
+      ใช้ไปแล้ว:{' '}
+      {parts.map((part, i) => (
+        <Fragment key={i}>
+          <span className="whitespace-nowrap">
+            {part}
+            {i < parts.length - 1 && ' ·'}
+          </span>{' '}
+        </Fragment>
+      ))}
+    </p>
   )
 }
